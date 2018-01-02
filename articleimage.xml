@@ -3,8 +3,8 @@
 	<name>PLG_CONTENT_ARTICLEIMAGE</name>
 	<author>SPEDI srl</author>
 	<creationDate>Luglio 2017</creationDate>
-  <copyright>Copyright (C) 1991 - 2016 SPEDI srl. Tutti i diritti riservati.</copyright>
-	<license>GNU General Public License version 2 or later; see LICENSE.txt</license>
+	<copyright>Copyright (C) SPEDI srl</copyright>
+	<license>GNU/GPL license: http://www.gnu.org/copyleft/gpl.html</license>
   <authorEmail>sviluppo@spedi.it</authorEmail>
 	<authorUrl>http://www.spedi.it</authorUrl>
 	<version>1.0.0</version>

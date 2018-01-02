@@ -1,10 +1,10 @@
 <?php
 /**
- * @version		1.0.0
- * @package		SPEDI plugins
- * @author    	JoomlaWorks - http://www.joomlaworks.net
- * @copyright	Copyright (c) 2006 - 2014 JoomlaWorks Ltd. All rights reserved.
- * @license		GNU/GPL license: http://www.gnu.org/copyleft/gpl.html
+ * @version    1.0.0
+ * @package    SPEDI Article Image
+ * @author     SPEDI srl - http://www.spedi.it
+ * @copyright  Copyright (c) Spedi srl.
+ * @license    GNU/GPL license: http://www.gnu.org/copyleft/gpl.html
  */
 
 // no direct access
