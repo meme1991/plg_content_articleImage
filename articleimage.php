@@ -109,7 +109,7 @@ class plgContentArticleImage extends JPlugin {
 
 				$a[$key]  = "<figure class=\"default mb-0 ".$float."\">";
 				$a[$key] .= $value;
-				$a[$key] .= "<figcaption class=\"d-flex justify-content-center align-items-center\"><i class=\"fa fa-search-plus fa-3x\" aria-hidden=\"true\"></i></figcaption>";
+				$a[$key] .= "<figcaption class=\"d-flex justify-content-center align-items-center\"><i class=\"far fa-search-plus fa-3x\"></i></figcaption>";
 				$a[$key] .= "<a href=\"".$src[1]."\" ".$titleLink." class=\"magnific-article\" ".$title."></a>";
 				$a[$key] .= "</figure>";
 				if(!empty($t[1]))
