@@ -1,11 +1,11 @@
 <?php
-/**
- * @version    1.0.0
- * @package    SPEDI Article Image
- * @author     SPEDI srl - http://www.spedi.it
- * @copyright  Copyright (c) Spedi srl.
- * @license    GNU/GPL license: http://www.gnu.org/copyleft/gpl.html
- */
+# @Author: SPEDI srl
+# @Date:   02-01-2018
+# @Email:  sviluppo@spedi.it
+# @Last modified by:   SPEDI srl
+# @Last modified time: 15-02-2018
+# @License: GNU/GPL license: http://www.gnu.org/copyleft/gpl.html
+# @Copyright: Copyright (c) SPEDI srl
 
 // no direct access
 defined('_JEXEC') or die('Restricted access');
@@ -20,14 +20,14 @@ class plgContentArticleImage extends JPlugin {
 	var $plg_name					= "articleimage";
 	var $plg_tag					= "<img";
 
-	function plgContentArticleImage( &$subject, $params ){
-		parent::__construct( $subject, $params );
-
-		// Define the DS constant under Joomla! 3.0+
-		if (!defined('DS')){
-			define('DS', DIRECTORY_SEPARATOR);
-		}
-	}
+	// function plgContentArticleImage( &$subject, $params ){
+	// 	parent::__construct( $subject, $params );
+  //
+	// 	// Define the DS constant under Joomla! 3.0+
+	// 	if (!defined('DS')){
+	// 		define('DS', DIRECTORY_SEPARATOR);
+	// 	}
+	// }
 
 	// Joomla! 2.5+
 	function onContentPrepare($context, &$row, &$params, $page = 0){
@@ -42,6 +42,8 @@ class plgContentArticleImage extends JPlugin {
 		$mainframe    = JFactory::getApplication();
 		$document     = JFactory::getDocument();
 		$db           = JFactory::getDbo();
+		$tmpl         = $mainframe->getTemplate();
+
 		//$siteTemplate = $mainframe->getTemplate();
 
 		// Check se il plugin è attivato
@@ -67,11 +69,19 @@ class plgContentArticleImage extends JPlugin {
 		// mi fermo se non ci sono occorrenze
 		if(($count_matches) == 0) return;
 
-		$tmpl     = JFactory::getApplication()->getTemplate();
-		$document->addStyleSheet(JUri::base(true).'/templates/'.$tmpl.'/dist/magnific/magnific-popup.min.css');
-		//$document->addStyleSheet(JURI::base(true).'/plugins/content/articleimage/css/default.min.css');
+		$document->addStyleSheet(JURI::base(true).'/plugins/content/articleimage/css/default.min.css');
 		JHtml::_('jquery.framework');
-		$document->addScript(JUri::base(true).'/templates/'.$tmpl.'/dist/magnific/jquery.magnific-popup.min.js');
+		// magnificPopup
+		$extensionPath = '/templates/'.$tmpl.'/dist/magnific/';
+		if(file_exists(JPATH_SITE.$extensionPath)){
+			$document->addStyleSheet(JUri::base(true).'/templates/'.$tmpl.'/dist/magnific/magnific-popup.min.css');
+			$document->addScript(JUri::base(true).'/templates/'.$tmpl.'/dist/magnific/jquery.magnific-popup.min.js');
+		}
+		else{
+			$document->addStyleSheet(JUri::base(true).'/plugins/content/'.$this->plg_name.'/dist/magnific/magnific-popup.min.css');
+			$document->addScript(JUri::base(true).'/plugins/content/'.$this->plg_name.'/dist/magnific/jquery.magnific-popup.min.js');
+		}
+
 		$document->addScriptDeclaration("
 			jQuery(document).ready(function(a){
 			  a('.magnific-article').magnificPopup({
@@ -101,18 +111,31 @@ class plgContentArticleImage extends JPlugin {
 					$value = str_replace('pull-right', '', $value);
 				}
 
+				// per vecchi JCE
+				$style = (preg_match('/style="([^"]*)"/i',$value, $s)) ? 'style="'.$s[1].'"' : '';
+				if($s[1] AND strpos($style, 'float')){
+					if(strpos($style, 'left')){
+						$float = 'float-left';
+						$value = str_replace($style, '', $value);
+					}
+					if(strpos($style, 'right')){
+						$float = 'float-right';
+						$value = str_replace($style, '', $value);
+					}
+				}
+
 				$titleLink = '';
 				if(!empty($t[1])){
 					$titleLink = 'title="'.$t[1].'"';
 					$desc      = "<p class=\"bg-light px-2 py-1\">".$t[1]."</p>";
 				}
 
-				$a[$key]  = "<figure class=\"default mb-0 ".$float."\">";
+				$a[$key]  = "<figure class=\"defaultVCNAbzN8 mb-0 ".$float."\">";
 				$a[$key] .= $value;
 				$a[$key] .= "<figcaption class=\"d-flex justify-content-center align-items-center\"><i class=\"far fa-search-plus fa-3x\"></i></figcaption>";
 				$a[$key] .= "<a href=\"".$src[1]."\" ".$titleLink." class=\"magnific-article\" ".$title."></a>";
 				$a[$key] .= "</figure>";
-				if(!empty($t[1]))
+				if(!empty($t[1]) AND $float == '')
 					$a[$key] .= $desc;
 
 				// if(preg_match('/class="([^"]*)"/i',$value, $class))

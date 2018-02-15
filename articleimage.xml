@@ -13,6 +13,7 @@
 	<files>
 		<filename plugin="articleimage">articleimage.php</filename>
 		<folder>css</folder>
+		<folder>dist</folder>
 		<folder>language</folder>
 	</files>
 </extension>
