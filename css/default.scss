@@ -43,3 +43,33 @@ figure.defaultVCNAbzN8{
     }
   }
 }
+
+.card{
+  .card-text{
+    figure.defaultVCNAbzN8{
+      margin-top: 15px;
+      margin-bottom: 15px !important;
+      img{
+        display: block;
+        max-width: 100% !important;
+        height: auto !important;
+      }
+    }
+  }
+}
+
+.lead-items{
+  .card{
+    .card-text{
+      figure.defaultVCNAbzN8{
+        &.float-left{
+          margin-right: 15px;
+        }
+        &.float-right{
+          margin-left: 15px;
+        }
+      }
+    }
+  }
+}
+
