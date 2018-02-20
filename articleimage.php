@@ -113,7 +113,7 @@ class plgContentArticleImage extends JPlugin {
 
 				// per vecchi JCE
 				$style = (preg_match('/style="([^"]*)"/i',$value, $s)) ? 'style="'.$s[1].'"' : '';
-				if($s[1] AND strpos($style, 'float')){
+				if(isset($s[1]) AND strpos($style, 'float')){
 					if(strpos($style, 'left')){
 						$float = 'float-left';
 						$value = str_replace($style, '', $value);
