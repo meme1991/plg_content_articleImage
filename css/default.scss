@@ -19,7 +19,8 @@ figure.defaultVCNAbzN8{
     background-color: $featured;
     color: #fff;
     opacity: 0;
-    transform: scale(0.5);
+    -webkit-transform: scale(0.5);
+            transform: scale(0.5);
     transition: all .3s ease-in-out;
     -webkit-transition: all .3s ease-in-out;
     -moz-transition: all .3s ease-in-out;
@@ -35,7 +36,8 @@ figure.defaultVCNAbzN8{
   &:hover{
     figcaption{
       opacity: 0.7;
-      transform: scale(1);
+      -webkit-transform: scale(1);
+              transform: scale(1);
       transition: all .3s ease-in-out;
       -webkit-transition: all .3s ease-in-out;
       -moz-transition: all .3s ease-in-out;
