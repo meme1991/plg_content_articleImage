@@ -1,0 +1,78 @@
+// @Author: SPEDI srl
+// @Date:   02-01-2018
+// @Email:  sviluppo@spedi.it
+// @Last modified by:   SPEDI srl
+// @Last modified time: 15-02-2018
+// @License: GNU/GPL license: http://www.gnu.org/copyleft/gpl.html
+// @Copyright: Copyright (c) SPEDI srl
+
+// $light: #eee;
+// $primary: #007bff;
+// $secondary: #868e96;
+// $white: #fff;
+// $dark: #1C2024;
+$featured: #65dcdf;
+
+figure.defaultVCNAbzN8{
+  position: relative;
+  display: inline-block !important;
+  figcaption{
+    background-color: $featured;
+    color: #fff;
+    opacity: 0;
+    -webkit-transform: scale(0.5);
+            transform: scale(0.5);
+    transition: all .3s ease-in-out;
+    -webkit-transition: all .3s ease-in-out;
+    -moz-transition: all .3s ease-in-out;
+    -o-transition: all .3s ease-in-out;
+  }
+  a, figcaption{
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+  &:hover{
+    figcaption{
+      opacity: 0.7;
+      -webkit-transform: scale(1);
+              transform: scale(1);
+      transition: all .3s ease-in-out;
+      -webkit-transition: all .3s ease-in-out;
+      -moz-transition: all .3s ease-in-out;
+      -o-transition: all .3s ease-in-out;
+    }
+  }
+}
+
+.card{
+  .card-text{
+    figure.defaultVCNAbzN8{
+      margin-top: 15px;
+      margin-bottom: 15px !important;
+      img{
+        display: block;
+        max-width: 100% !important;
+        height: auto !important;
+      }
+    }
+  }
+}
+
+.lead-items{
+  .card{
+    .card-text{
+      figure.defaultVCNAbzN8{
+        &.float-left{
+          margin-right: 15px;
+        }
+        &.float-right{
+          margin-left: 15px;
+        }
+      }
+    }
+  }
+}
+
