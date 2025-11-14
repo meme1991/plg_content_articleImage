@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<extension version="2.5" type="plugin" group="content" method="upgrade">
+<extension version="5" type="plugin" group="content" method="upgrade">
 	<name>PLG_CONTENT_ARTICLEIMAGE</name>
 	<author>SPEDI srl</author>
 	<creationDate>Luglio 2017</creationDate>
@@ -10,10 +10,11 @@
 	<version>1.0.0</version>
 	<description>PLG_CONTENT_ARTICLEIMAGE_DESC</description>
 	<!-- Files -->
+	<media destination="plg_content_articleimage" folder="media">
+		<folder>dist</folder>
+	</media>
 	<files>
 		<filename plugin="articleimage">articleimage.php</filename>
-		<folder>css</folder>
-		<folder>dist</folder>
 		<folder>language</folder>
 	</files>
 </extension>

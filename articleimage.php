@@ -1,154 +1,188 @@
 <?php
-# @Author: SPEDI srl
-# @Date:   02-01-2018
-# @Email:  sviluppo@spedi.it
-# @Last modified by:   SPEDI srl
-# @Last modified time: 15-02-2018
-# @License: GNU/GPL license: http://www.gnu.org/copyleft/gpl.html
-# @Copyright: Copyright (c) SPEDI srl
+/**
+ * @Author: SPEDI srl (adapted)
+ * @Date:   02-01-2018
+ * @Last modified: adapted for Joomla 5
+ * @License: GNU/GPL
+ */
 
-// no direct access
-defined('_JEXEC') or die('Restricted access');
+// No direct access
+defined('_JEXEC') or die;
 
-jimport('joomla.plugin.plugin');
-if (version_compare(JVERSION, '1.6.0', 'ge')){
-	jimport('joomla.html.parameter');
+use Joomla\CMS\Plugin\CMSPlugin;
+use Joomla\CMS\Factory;
+use Joomla\CMS\Uri\Uri;
+use Joomla\CMS\Plugin\PluginHelper;
+use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\CMS\Filesystem\File;
+
+/**
+ * Content plugin to wrap images with a figure + magnific popup link
+ */
+class plgContentArticleImage extends CMSPlugin
+{
+    protected $plg_name = 'articleimage';
+    protected $plg_tag  = '<img';
+
+    /**
+     * Event triggered before content is displayed
+     *
+     * @param   string  $context
+     * @param   object  &$row
+     * @param   mixed   &$params
+     * @param   int     $page
+     * @return  void
+     */
+    public function onContentPrepare($context, &$row, &$params, $page = 0)
+    {
+        $this->renderArticleImage($row, $params, $page);
+    }
+
+    /**
+     * Main function that processes the article text
+     *
+     * @param   object  &$row
+     * @param   mixed   &$params
+     * @param   int     $page
+     * @return  void
+     */
+    protected function renderArticleImage(&$row, &$params, $page = 0)
+    {
+        // API
+        $app      = Factory::getApplication();
+        $doc      = Factory::getDocument();
+        $db       = Factory::getDbo();
+        $tmpl     = $app->getTemplate();
+        $wa       = $doc->getWebAssetManager();
+
+        // Check plugin enabled
+        if (!PluginHelper::isEnabled('content', $this->plg_name)) {
+            return;
+        }
+
+        // Allowed formats
+        $allowedFormats = array('', 'html', 'feed', 'json');
+        $format = $app->input->getCmd('format', '');
+        if (!in_array($format, $allowedFormats, true)) {
+            return;
+        }
+
+        // Quick check for performance
+        if (!isset($row->text) || strpos($row->text, $this->plg_tag) === false) {
+            return;
+        }
+
+        // Find all <img ...> tags
+        $count_matches = preg_match_all('/<img[^>]+>/i', $row->text, $matches);
+        if ($count_matches === 0) {
+            return;
+        }
+
+        // Register / use plugin CSS
+        // Prefer template's magnific assets if present, otherwise use plugin's
+        // $pluginBase = Uri::base(true) . '/plugins/content/' . $this->plg_name;
+        $templateMagnificPath = JPATH_SITE . '/templates/' . $tmpl . '/dist/magnific/';
+
+        // Use WebAssetManager for assets (jQuery + CSS/JS)
+        // Ensure jQuery is loaded
+        try {
+            $wa->useScript('jquery');
+        } catch (\Exception $e) {
+            // fallback to HTMLHelper if needed
+            HTMLHelper::_('jquery.framework');
+        }
+
+        // Register and use plugin CSS
+        if (file_exists($templateMagnificPath)) {
+            // template provides magnific files
+            $wa->registerAndUseStyle('template.light.magnific-css', 'media/templates/site/' . $tmpl . '/dist/magnific/magnific-popup.min.css');
+            $wa->registerAndUseScript('template.light.magnific-js', 'media/templates/site/' . $tmpl . '/dist/magnific/jquery.magnific-popup.min.js');
+        } else {
+            // plugin fallback
+            $wa->registerAndUseStyle('plg.content.' . $this->plg_name . '.magnific-css', 'media/plg_content_'. $this->plg_name .'/dist/magnific/magnific-popup.min.css');
+            $wa->registerAndUseScript('plg.content.' . $this->plg_name . '.magnific-js', 'media/plg_content_'. $this->plg_name .'/dist/magnific/jquery.magnific-popup.min.js');
+        }
+
+        // plugin CSS (main)
+        $wa->registerAndUseStyle('plg.content.' . $this->plg_name . '.css', 'media/plg_content_'. $this->plg_name .'/dist/css/default.min.css');
+
+        // Add the small init script for magnific popup
+        $doc->addScriptDeclaration("
+            jQuery(document).ready(function($){
+                $('.magnific-article').magnificPopup({
+                    type: 'image',
+                    closeOnContentClick: true
+                });
+            });
+        ");
+
+        // Process each image tag
+        foreach ($matches[0] as $key => $value) {
+            // get class attribute if any
+            $class = array();
+            preg_match('/class="([^"]*)"/i', $value, $class);
+
+            // skip images with class plg-no-lightbox
+            if (!empty($class[1]) && strpos($class[1], 'plg-no-lightbox') !== false) {
+                continue;
+            }
+
+            // get src
+            $src = array();
+            preg_match('/src="([^"]*)"/i', $value, $src);
+            $srcVal = isset($src[1]) ? $src[1] : '';
+
+            // title (for link and optional caption)
+            $t = array();
+            $title = '';
+            $desc  = '';
+            if (preg_match('/title="([^"]*)"/i', $value, $t)) {
+                $title = 'title="' . htmlspecialchars($t[1], ENT_QUOTES, 'UTF-8') . '"';
+                $desc  = "<p class=\"bg-light px-2 py-1\">" . htmlspecialchars($t[1], ENT_QUOTES, 'UTF-8') . "</p>";
+            }
+
+            // handle float classes from editors (pull-left/pull-right) -> convert to float-left/float-right
+            $float = '';
+            if (!empty($class[1]) && strpos($class[1], 'pull-left') !== false) {
+                $float = 'float-left';
+                $value = str_replace('pull-left', '', $value);
+            }
+            if (!empty($class[1]) && strpos($class[1], 'pull-right') !== false) {
+                $float = 'float-right';
+                $value = str_replace('pull-right', '', $value);
+            }
+
+            // style float fallback (old editors)
+            $s = array();
+            if (preg_match('/style="([^"]*)"/i', $value, $s)) {
+                $styleVal = isset($s[1]) ? $s[1] : '';
+                if (stripos($styleVal, 'float') !== false) {
+                    if (stripos($styleVal, 'left') !== false) {
+                        $float = 'float-left';
+                    }
+                    if (stripos($styleVal, 'right') !== false) {
+                        $float = 'float-right';
+                    }
+                    // remove inline float style
+                    $value = str_replace($s[0], '', $value);
+                }
+            }
+
+            // build replacement HTML
+            $titleLink = (!empty($t[1])) ? 'title="' . htmlspecialchars($t[1], ENT_QUOTES, 'UTF-8') . '"' : '';
+            $a = array();
+            $a[] = '<figure class="defaultVCNAbzN8 mb-0 ' . $float . '">';
+            $a[] = $value;
+            $a[] = '<figcaption class="d-flex justify-content-center align-items-center"><i class="far fa-search-plus fa-3x"></i></figcaption>';
+            $a[] = '<a href="'. htmlspecialchars($srcVal, ENT_QUOTES, 'UTF-8') .'" '. $titleLink .' class="magnific-article" ' . $title . '></a>';
+            $a[] = '</figure>';
+            if (!empty($t[1]) && $float === '') {
+                $a[] = $desc;
+            }
+            $replacement = implode('', $a);
+
+            // replace only the first occurrence of this exact tag (to avoid unintended replacements)
+            $row->text = preg_replace('/' . preg_quote($matches[0][$key], '/') . '/', $replacement, $row->text, 1);
+        }
+    }
 }
-
-class plgContentArticleImage extends JPlugin {
-
-	var $plg_name					= "articleimage";
-	var $plg_tag					= "<img";
-
-	// function plgContentArticleImage( &$subject, $params ){
-	// 	parent::__construct( $subject, $params );
-  //
-	// 	// Define the DS constant under Joomla! 3.0+
-	// 	if (!defined('DS')){
-	// 		define('DS', DIRECTORY_SEPARATOR);
-	// 	}
-	// }
-
-	// Joomla! 2.5+
-	function onContentPrepare($context, &$row, &$params, $page = 0){
-		$this->renderArticleImage($row, $params, $page = 0);
-	}
-
-	// The main function
-	function renderArticleImage(&$row, &$params, $page = 0){
-
-		// API
-		jimport('joomla.filesystem.file');
-		$mainframe    = JFactory::getApplication();
-		$document     = JFactory::getDocument();
-		$db           = JFactory::getDbo();
-		$tmpl         = $mainframe->getTemplate();
-
-		//$siteTemplate = $mainframe->getTemplate();
-
-		// Check se il plugin è attivato
-		if (JPluginHelper::isEnabled('content', $this->plg_name) == false) return;
-
-		// Salvare se il formato della pagina non è quello che vogliamo
-		$allowedFormats = array('', 'html', 'feed', 'json');
-		if (!in_array(JRequest::getCmd('format'), $allowedFormats)) return;
-
-		// Controllo semplice delle prestazioni per determinare se il plugin dovrebbe elaborare ulteriormente
-		if (JString::strpos($row->text, $this->plg_tag) === false) return;
-
-		// // Start Plugin
-		// $regex_one		= '/({spPhGallery\s*)(.*?)(})/si';
-		// $regex_all		= '/{spPhGallery\s*.*?}/si';
-		// //$matches 		= array();
-		// $count_matches	= preg_match_all($regex_all,$row->text,$matches,PREG_OFFSET_CAPTURE | PREG_PATTERN_ORDER);
-
-		// estraggo i tag d'immagine
-		$count_matches = preg_match_all('/<img[^>]+>/i',$row->text, $matches);
-		// ---> in $matches[0] ho tutti i tag <img>
-
-		// mi fermo se non ci sono occorrenze
-		if(($count_matches) == 0) return;
-
-		$document->addStyleSheet(JURI::base(true).'/plugins/content/articleimage/css/default.min.css');
-		JHtml::_('jquery.framework');
-		// magnificPopup
-		$extensionPath = '/templates/'.$tmpl.'/dist/magnific/';
-		if(file_exists(JPATH_SITE.$extensionPath)){
-			$document->addStyleSheet(JUri::base(true).'/templates/'.$tmpl.'/dist/magnific/magnific-popup.min.css');
-			$document->addScript(JUri::base(true).'/templates/'.$tmpl.'/dist/magnific/jquery.magnific-popup.min.js');
-		}
-		else{
-			$document->addStyleSheet(JUri::base(true).'/plugins/content/'.$this->plg_name.'/dist/magnific/magnific-popup.min.css');
-			$document->addScript(JUri::base(true).'/plugins/content/'.$this->plg_name.'/dist/magnific/jquery.magnific-popup.min.js');
-		}
-
-		$document->addScriptDeclaration("
-			jQuery(document).ready(function(a){
-			  a('.magnific-article').magnificPopup({
-			    type: 'image',
-					closeOnContentClick: true
-			  })
-			});
-		");
-
-		foreach ($matches[0] as $key => $value) {
-
-			preg_match('/class="([^"]*)"/i',$value, $class);
-
-			if(empty($class[1]) || (strpos($class[1], 'plg-no-lightbox') === false)){
-				preg_match('/src="([^"]*)"/i',$value, $src);
-
-				$title = (preg_match('/title="([^"]*)"/i',$value, $t)) ? 'title="'.$t[1].'"' : '';
-
-				// se l'editor è tinymice
-				$float = '';
-				if(!empty($class[1]) && strpos($class[1], 'pull-left') !== false){
-					$float = 'float-left';
-					$value = str_replace('pull-left', '', $value);
-				}
-				if(!empty($class[1]) && strpos($class[1], 'pull-right') !== false){
-					$float = 'float-right';
-					$value = str_replace('pull-right', '', $value);
-				}
-
-				// per vecchi JCE
-				$style = (preg_match('/style="([^"]*)"/i',$value, $s)) ? 'style="'.$s[1].'"' : '';
-				if(isset($s[1]) AND strpos($style, 'float')){
-					if(strpos($style, 'left')){
-						$float = 'float-left';
-						$value = str_replace($style, '', $value);
-					}
-					if(strpos($style, 'right')){
-						$float = 'float-right';
-						$value = str_replace($style, '', $value);
-					}
-				}
-
-				$titleLink = '';
-				if(!empty($t[1])){
-					$titleLink = 'title="'.$t[1].'"';
-					$desc      = "<p class=\"bg-light px-2 py-1\">".$t[1]."</p>";
-				}
-
-				$a[$key]  = "<figure class=\"defaultVCNAbzN8 mb-0 ".$float."\">";
-				$a[$key] .= $value;
-				$a[$key] .= "<figcaption class=\"d-flex justify-content-center align-items-center\"><i class=\"far fa-search-plus fa-3x\"></i></figcaption>";
-				$a[$key] .= "<a href=\"".$src[1]."\" ".$titleLink." class=\"magnific-article\" ".$title."></a>";
-				$a[$key] .= "</figure>";
-				if(!empty($t[1]) AND $float == '')
-					$a[$key] .= $desc;
-
-				// if(preg_match('/class="([^"]*)"/i',$value, $class))
-				//
-				// if(preg_match('/alt="([^"]*)"/i',$value, $alt))
-
-				$row->text = str_replace($matches[0][$key], $a[$key], $row->text);
-
-			}
-
-		}
-
-
-	} // END FUNCTION
-
-} // END CLASS
