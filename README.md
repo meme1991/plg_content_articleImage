@@ -1,4 +1,5 @@
 # plg_content_articleImage
+COMPATIBILE CON JOOMLA 4 E SUCCESSIVE VERSIONI
 
 <p>Plugin Joomla che ridisegna l'immagine dentro un articolo</p>
 
